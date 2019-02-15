@@ -307,8 +307,16 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     let statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
 
+    var userHomeDirectoryPath : String {
+        let pw = getpwuid(getuid())
+        let home = pw?.pointee.pw_dir
+        let homePath = FileManager.default.string(withFileSystemRepresentation: home!, length: Int(strlen(home)))
+        
+        return homePath
+    }
+    
     func applicationDidFinishLaunching(_ aNotification: Notification) {
-        let json = try? Data(contentsOf: URL(fileURLWithPath: "/Users/rich/.config/shbar/shbar.json"))
+        let json = try? Data(contentsOf: URL(fileURLWithPath: "\(userHomeDirectoryPath)/.config/shbar/shbar.json"))
         if let json = json {
             let decoder = JSONDecoder()
             let decodedItems = try? decoder.decode([ItemConfig].self, from: json)
