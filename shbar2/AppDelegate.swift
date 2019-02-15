@@ -118,6 +118,8 @@ class ItemConfig : Codable {
     }
     
     @objc func startJob() {
+        self.currentJob?.terminate()
+
         if let script = self.jobScript {
             script.execute (launched: {
                 process in
@@ -180,6 +182,7 @@ class ItemConfig : Codable {
             let subMenu = NSMenu()
             let statusItem = NSMenuItem(title: "stopped", action: nil, keyEquivalent: "")
             self.jobStatusItem = statusItem
+
             let startItem = NSMenuItem(title: "start", action: nil, keyEquivalent: "")
             startItem.action = #selector(ItemConfig.startJob)
             startItem.target = self
@@ -188,9 +191,14 @@ class ItemConfig : Codable {
             stopItem.action = #selector(ItemConfig.stopJob)
             stopItem.target = self
             
+            let restartItem = NSMenuItem(title: "restart", action: nil, keyEquivalent: "")
+            restartItem.action = #selector(ItemConfig.startJob)
+            restartItem.target = self
+            
             subMenu.addItem(statusItem)
             subMenu.addItem(startItem)
             subMenu.addItem(stopItem)
+            subMenu.addItem(restartItem)
 
             menuItem.submenu = subMenu
             
