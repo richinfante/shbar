@@ -82,6 +82,13 @@ class ItemConfig : Codable {
     var jobStatusItem: NSMenuItem?
     var jobExitStatus: Int32?
     var currentJob: Process?
+    var isPaused : Bool = false
+    
+    var startMenuItem: NSMenuItem?
+    var stopMenuItem: NSMenuItem?
+    var restartMenuItem: NSMenuItem?
+    var suspendMenuItem: NSMenuItem?
+    var resumeMenuItem: NSMenuItem?
     
     private enum CodingKeys: String, CodingKey {
         case mode
@@ -117,6 +124,28 @@ class ItemConfig : Codable {
         self.autostartJob = autostartJob
     }
     
+    @objc func suspendJob() {
+        if let process = self.currentJob {
+            process.suspend()
+            self.isPaused = true
+
+            if let title = self.title {
+                self.updateTitle(title: title)
+            }
+        }
+    }
+    
+    @objc func resumeJob() {
+        if let process = self.currentJob {
+            process.resume()
+            self.isPaused = false
+
+            if let title = self.title {
+                self.updateTitle(title: title)
+            }
+        }
+    }
+    
     @objc func startJob() {
         self.currentJob?.terminate()
 
@@ -129,12 +158,9 @@ class ItemConfig : Codable {
                 if let title = self.title {
                     self.updateTitle(title: title)
                 }
-                self.jobStatusItem?.title = "running - pid:\(process.processIdentifier)"
             }, completed: {
                 status, result in
-                
-                self.jobStatusItem?.title = "exited: \(status)"
-                
+
                 if let title = self.title {
                     self.updateTitle(title: title)
                 }
@@ -157,10 +183,35 @@ class ItemConfig : Codable {
             
             // Update job's status label
             if let currentJob = self.currentJob {
-                if currentJob.isRunning {
+                if self.isPaused {
+                    color = NSColor.blue
+                } else if currentJob.isRunning {
                     color = NSColor.green
                 } else if currentJob.terminationStatus != 0 {
                     color = NSColor.red
+                }
+                
+                if self.isPaused {
+//                    self.startMenuItem?.isHidden = true
+//                    self.stopMenuItem?.isHidden = false
+//                    self.restartMenuItem?.isHidden = false
+//                    self.suspendMenuItem?.isHidden = true
+//                    self.resumeMenuItem?.isHidden = false
+                    self.jobStatusItem?.title = "suspended - pid:\(currentJob.processIdentifier)"
+                } else if currentJob.isRunning {
+//                    self.startMenuItem?.isHidden = true
+//                    self.stopMenuItem?.isHidden = false
+//                    self.restartMenuItem?.isHidden = false
+//                    self.suspendMenuItem?.isHidden = false
+//                    self.resumeMenuItem?.isHidden = true
+                    self.jobStatusItem?.title = "running - pid:\(currentJob.processIdentifier)"
+                } else {
+//                    self.startMenuItem?.isHidden = false
+//                    self.stopMenuItem?.isHidden = true
+//                    self.restartMenuItem?.isHidden = true
+//                    self.suspendMenuItem?.isHidden = true
+//                    self.resumeMenuItem?.isHidden = false
+                    self.jobStatusItem?.title = "exited: \(currentJob.terminationStatus)"
                 }
             }
             
@@ -195,10 +246,26 @@ class ItemConfig : Codable {
             restartItem.action = #selector(ItemConfig.startJob)
             restartItem.target = self
             
+            let suspendItem = NSMenuItem(title: "suspend", action: nil, keyEquivalent: "")
+            suspendItem.action = #selector(ItemConfig.suspendJob)
+            suspendItem.target = self
+            
+            let resumeItem = NSMenuItem(title: "resume", action: nil, keyEquivalent: "")
+            resumeItem.action = #selector(ItemConfig.resumeJob)
+            resumeItem.target = self
+            
             subMenu.addItem(statusItem)
             subMenu.addItem(startItem)
             subMenu.addItem(stopItem)
             subMenu.addItem(restartItem)
+            subMenu.addItem(suspendItem)
+            subMenu.addItem(resumeItem)
+            
+            self.startMenuItem = startItem
+            self.stopMenuItem = stopItem
+            self.restartMenuItem = restartItem
+            self.suspendMenuItem = suspendItem
+            self.resumeMenuItem = resumeItem
 
             menuItem.submenu = subMenu
             
