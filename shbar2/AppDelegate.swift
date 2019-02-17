@@ -360,7 +360,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             title: "Setup Help",
             actionScript: Script(
                 bin: "/bin/sh",
-                args: ["-c", "open https://www.richinfante.com"],
+                args: ["-c", "open https://github.com/richinfante/shbar"],
                 env: [
                     "PATH": "/usr/bin:/usr/local/bin:/sbin:/bin"
                 ])
