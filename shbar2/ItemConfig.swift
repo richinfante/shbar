@@ -25,6 +25,7 @@ class ItemConfig : Codable {
     var jobExitStatus: Int32?
     var currentJob: Process?
     var isPaused : Bool = false
+    var actionShowsConsole: Bool? = false
     
     var startMenuItem: NSMenuItem?
     var stopMenuItem: NSMenuItem?
@@ -42,6 +43,7 @@ class ItemConfig : Codable {
         case jobScript
         case reloadJob
         case autostartJob
+        case actionShowsConsole
     }
     
     init(
@@ -274,11 +276,17 @@ class ItemConfig : Codable {
     /// Dispatch background script action
     @objc func dispatchAction() {
         if let script = self.actionScript {
-            script.execute {
-                _, result in
+            script.launchJob(launched: {
+                process in
+                self.currentJob = process
+                if let show = self.actionShowsConsole, show {
+                    self.showJobConsole()
+                }
+            }, completed: {
+                result in
                 
                 print("Result: \(result)")
-            }
+            })
         }
     }
     

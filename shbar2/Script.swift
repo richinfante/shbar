@@ -40,41 +40,59 @@ class Script : Codable {
         DispatchQueue.global(qos: .background).async { [weak self] in
             guard let `self` = self else { return }
             
+            // Create a process instance
             let task = Process()
             self.process = task
+            
+            // Assign a uuid to this script if it is not set yet
             if self.uuid == nil {
                 let uuid = UUID()
                 self.uuid = uuid
             }
             
+            // Set logfile path
             let logfile = "\(AppDelegate.userHomeDirectoryPath)/Library/Logs/shbar/\(self.uuid!.uuidString).log"
+            
+            // Set process options
             task.currentDirectoryPath = "/"
             task.environment = self.env
             task.launchPath = self.bin
             task.arguments = self.args
+            
+            // Try to attach the logfile to the process STDOUT/STDERR
             do {
                 print("Create log for \(self.bin) launch: \(logfile)")
                 FileManager.default.createFile(atPath: logfile, contents: nil)
                 let handle = try FileHandle(forWritingTo: URL(fileURLWithPath: logfile))
-                let handle2 = try FileHandle(forWritingTo: URL(fileURLWithPath: logfile))
                 task.standardOutput = handle
-                task.standardError = handle2
+                task.standardError = handle
             } catch let error {
                 print("Error creating logfile: \(error)")
             }
             
+            // Launch the task
             task.launch()
-            print("launched: \(self.bin)")
+            
+            // Notify of laynch
             DispatchQueue.main.sync {
                 launched?(task)
             }
+            
             print("wait for exit: \(self.bin)")
+            
+            // Grab the file handle so we can log when it dies.
+            let handle: FileHandle? = task.standardOutput as? FileHandle
             task.waitUntilExit()
-            print("exited: \(self.bin)")
-            let status = task.terminationStatus
-            print("Child process exited with code \(status)")
+            
+            // Write status to handle if it exists.
+            if let handle = handle, let data = "exited: \(task.terminationStatus)".data(using: .utf8) {
+                handle.write(data)
+            }
+
+            // Log status and notify callback
+            print("Child process exited with code \(task.terminationStatus)")
             DispatchQueue.main.sync {
-                completed?(status)
+                completed?(task.terminationStatus)
             }
         }
     }
