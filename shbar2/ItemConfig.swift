@@ -26,15 +26,18 @@ class ItemConfig : Codable {
     var currentJob: Process?
     var isPaused : Bool = false
     var actionShowsConsole: Bool? = false
+    var children: [ItemConfig]? = []
     
     var startMenuItem: NSMenuItem?
     var stopMenuItem: NSMenuItem?
     var restartMenuItem: NSMenuItem?
     var suspendMenuItem: NSMenuItem?
     var resumeMenuItem: NSMenuItem?
+    var consoleMenuItem: NSMenuItem?
     
     private enum CodingKeys: String, CodingKey {
         case mode
+        case children
         case title
         case titleScript
         case titleRefreshInterval
@@ -133,9 +136,7 @@ class ItemConfig : Codable {
     }
     
     @objc func showJobConsole() {
-        print("Show Job Console")
         if let jobScript = self.jobScript, let uuid = jobScript.uuid {
-            print("Launch")
             DispatchQueue.global(qos: .background).async {
                 let process = Process()
                 process.arguments = ["\(AppDelegate.userHomeDirectoryPath)/Library/Logs/shbar/\(uuid.uuidString).log"]
@@ -153,6 +154,7 @@ class ItemConfig : Codable {
             
             // Update job's status label
             if let currentJob = self.currentJob {
+                // Determine color depending on status
                 if self.isPaused {
                     color = NSColor.blue
                 } else if currentJob.isRunning {
@@ -161,34 +163,49 @@ class ItemConfig : Codable {
                     color = NSColor.red
                 }
                 
+                // Update job control menu items
                 if self.isPaused {
-                    //                    self.startMenuItem?.isHidden = true
-                    //                    self.stopMenuItem?.isHidden = false
-                    //                    self.restartMenuItem?.isHidden = false
-                    //                    self.suspendMenuItem?.isHidden = true
-                    //                    self.resumeMenuItem?.isHidden = false
+                    self.startMenuItem?.isEnabled = false
+                    self.stopMenuItem?.isEnabled = true
+                    self.restartMenuItem?.isEnabled = false
+                    self.suspendMenuItem?.isEnabled = false
+                    self.resumeMenuItem?.isEnabled = true
+                    self.consoleMenuItem?.isEnabled = true
                     self.jobStatusItem?.title = "suspended - pid:\(currentJob.processIdentifier)"
                 } else if currentJob.isRunning {
-                    //                    self.startMenuItem?.isHidden = true
-                    //                    self.stopMenuItem?.isHidden = false
-                    //                    self.restartMenuItem?.isHidden = false
-                    //                    self.suspendMenuItem?.isHidden = false
-                    //                    self.resumeMenuItem?.isHidden = true
+                    self.startMenuItem?.isEnabled = false
+                    self.stopMenuItem?.isEnabled = true
+                    self.restartMenuItem?.isEnabled = true
+                    self.suspendMenuItem?.isEnabled = true
+                    self.resumeMenuItem?.isEnabled = false
+                    self.consoleMenuItem?.isEnabled = true
                     self.jobStatusItem?.title = "running - pid:\(currentJob.processIdentifier)"
                 } else {
-                    //                    self.startMenuItem?.isHidden = false
-                    //                    self.stopMenuItem?.isHidden = true
-                    //                    self.restartMenuItem?.isHidden = true
-                    //                    self.suspendMenuItem?.isHidden = true
-                    //                    self.resumeMenuItem?.isHidden = false
+                    self.startMenuItem?.isEnabled = true
+                    self.stopMenuItem?.isEnabled = false
+                    self.restartMenuItem?.isEnabled = false
+                    self.suspendMenuItem?.isEnabled = false
+                    self.resumeMenuItem?.isEnabled = false
+                    self.consoleMenuItem?.isEnabled = true
                     self.jobStatusItem?.title = "exited: \(currentJob.terminationStatus)"
                 }
+            } else {
+                self.jobStatusItem?.title = "inactive"
+                self.consoleMenuItem?.isEnabled = false
+                self.startMenuItem?.isEnabled = true
+                self.stopMenuItem?.isEnabled = false
+                self.restartMenuItem?.isEnabled = false
+                self.suspendMenuItem?.isEnabled = false
+                self.resumeMenuItem?.isEnabled = false
+                self.consoleMenuItem?.isEnabled = false
             }
             
+            // Create status bullet
             let mutableAttributedString = NSMutableAttributedString(string: "●", attributes: [
                 NSAttributedString.Key.foregroundColor: color
-                ])
+            ])
             
+            // Assign title
             mutableAttributedString.append(NSAttributedString(string: " " + title))
             menuItem?.attributedTitle = mutableAttributedString
         } else {
@@ -196,52 +213,73 @@ class ItemConfig : Codable {
         }
     }
     
-    func createMenuItem(_ appDeletate: AppDelegate) -> NSMenuItem {
+    func createMenuItem(_ appDelegate: AppDelegate) -> NSMenuItem {
         let menuItem = NSMenuItem()
         
+        if let children = self.children, children.count > 0 {
+            let subMenu = NSMenu()
+            subMenu.autoenablesItems = true
+            
+            for item in children {
+                subMenu.addItem(item.createMenuItem(appDelegate))
+            }
+            menuItem.submenu = subMenu
+        }
+
         if self.mode == .JobStatus {
             let subMenu = NSMenu()
+            subMenu.autoenablesItems = false
+
             let statusItem = NSMenuItem(title: "stopped", action: nil, keyEquivalent: "")
+            statusItem.isEnabled = false
             self.jobStatusItem = statusItem
             
-            let startItem = NSMenuItem(title: "start", action: nil, keyEquivalent: "")
+            let startItem = NSMenuItem(title: "Start Job", action: nil, keyEquivalent: "")
             startItem.action = #selector(ItemConfig.startJob)
+            startItem.isEnabled = true
             startItem.target = self
             
-            let stopItem = NSMenuItem(title: "stop", action: nil, keyEquivalent: "")
+            let stopItem = NSMenuItem(title: "Stop Job", action: nil, keyEquivalent: "")
             stopItem.action = #selector(ItemConfig.stopJob)
+            stopItem.isEnabled = false
             stopItem.target = self
             
-            let restartItem = NSMenuItem(title: "restart", action: nil, keyEquivalent: "")
+            let restartItem = NSMenuItem(title: "Restart Job", action: nil, keyEquivalent: "")
             restartItem.action = #selector(ItemConfig.startJob)
+            restartItem.isEnabled = false
             restartItem.target = self
             
-            let suspendItem = NSMenuItem(title: "suspend", action: nil, keyEquivalent: "")
+            let suspendItem = NSMenuItem(title: "Suspend Job", action: nil, keyEquivalent: "")
             suspendItem.action = #selector(ItemConfig.suspendJob)
+            suspendItem.isEnabled = false
             suspendItem.target = self
             
-            let resumeItem = NSMenuItem(title: "resume", action: nil, keyEquivalent: "")
+            let resumeItem = NSMenuItem(title: "Resume Job", action: nil, keyEquivalent: "")
             resumeItem.action = #selector(ItemConfig.resumeJob)
+            resumeItem.isEnabled = false
             resumeItem.target = self
-            
-            let consoleItem = NSMenuItem(title: "console", action: nil, keyEquivalent: "")
+
+            let consoleItem = NSMenuItem(title: "View Console", action: nil, keyEquivalent: "")
             consoleItem.action = #selector(ItemConfig.showJobConsole)
+            consoleItem.isEnabled = true
             consoleItem.target = self
             
-            
             subMenu.addItem(statusItem)
+            subMenu.addItem(NSMenuItem.separator())
+            subMenu.addItem(consoleItem)
+            subMenu.addItem(NSMenuItem.separator())
             subMenu.addItem(startItem)
             subMenu.addItem(stopItem)
             subMenu.addItem(restartItem)
             subMenu.addItem(suspendItem)
             subMenu.addItem(resumeItem)
-            subMenu.addItem(consoleItem)
             
             self.startMenuItem = startItem
             self.stopMenuItem = stopItem
             self.restartMenuItem = restartItem
             self.suspendMenuItem = suspendItem
             self.resumeMenuItem = resumeItem
+            self.consoleMenuItem = consoleItem
             
             menuItem.submenu = subMenu
             
@@ -251,7 +289,7 @@ class ItemConfig : Codable {
                 self.startJob()
             }
         } else if self.mode == .ApplicationQuit {
-            menuItem.target = appDeletate
+            menuItem.target = appDelegate
             menuItem.action = #selector(AppDelegate.terminateMenuBarApp(_:))
         } else if self.mode == .RefreshingItem {
             // Set up scripting
