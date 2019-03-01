@@ -11,6 +11,9 @@
 		9B45A9A2221B7B2600305441 /* ItemConfigMode.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9B45A9A1221B7B2600305441 /* ItemConfigMode.swift */; };
 		9B45A9A4221B7B4000305441 /* JobStatus.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9B45A9A3221B7B4000305441 /* JobStatus.swift */; };
 		9B45A9A6221B7B6000305441 /* ItemConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9B45A9A5221B7B6000305441 /* ItemConfig.swift */; };
+		9B4912D2221CCAD2006E6C73 /* LabelProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9B4912D1221CCAD2006E6C73 /* LabelProtocol.swift */; };
+		9B53792522296C9100D88798 /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = 9B53792422296C9000D88798 /* README.md */; };
+		9B53792722296C9800D88798 /* LICENSE.md in Resources */ = {isa = PBXBuildFile; fileRef = 9B53792622296C9800D88798 /* LICENSE.md */; };
 		9BDEE78222163235006BA354 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9BDEE78122163235006BA354 /* AppDelegate.swift */; };
 		9BDEE78622163235006BA354 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 9BDEE78522163235006BA354 /* Assets.xcassets */; };
 		9BDEE78922163235006BA354 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 9BDEE78722163235006BA354 /* Main.storyboard */; };
@@ -32,6 +35,9 @@
 		9B45A9A1221B7B2600305441 /* ItemConfigMode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemConfigMode.swift; sourceTree = "<group>"; };
 		9B45A9A3221B7B4000305441 /* JobStatus.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JobStatus.swift; sourceTree = "<group>"; };
 		9B45A9A5221B7B6000305441 /* ItemConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemConfig.swift; sourceTree = "<group>"; };
+		9B4912D1221CCAD2006E6C73 /* LabelProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LabelProtocol.swift; sourceTree = "<group>"; };
+		9B53792422296C9000D88798 /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
+		9B53792622296C9800D88798 /* LICENSE.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = LICENSE.md; sourceTree = "<group>"; };
 		9BDEE77E22163235006BA354 /* shbar2.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = shbar2.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		9BDEE78122163235006BA354 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		9BDEE78522163235006BA354 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -64,6 +70,8 @@
 		9BDEE77522163234006BA354 = {
 			isa = PBXGroup;
 			children = (
+				9B53792422296C9000D88798 /* README.md */,
+				9B53792622296C9800D88798 /* LICENSE.md */,
 				9BDEE78022163235006BA354 /* shbar2 */,
 				9BDEE79322163235006BA354 /* shbar2Tests */,
 				9BDEE77F22163235006BA354 /* Products */,
@@ -91,6 +99,7 @@
 				9BDEE78722163235006BA354 /* Main.storyboard */,
 				9BDEE78A22163235006BA354 /* Info.plist */,
 				9BDEE78B22163235006BA354 /* shbar2.entitlements */,
+				9B4912D1221CCAD2006E6C73 /* LabelProtocol.swift */,
 			);
 			path = shbar2;
 			sourceTree = "<group>";
@@ -193,6 +202,8 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				9B53792722296C9800D88798 /* LICENSE.md in Resources */,
+				9B53792522296C9100D88798 /* README.md in Resources */,
 				9BDEE78622163235006BA354 /* Assets.xcassets in Resources */,
 				9BDEE78922163235006BA354 /* Main.storyboard in Resources */,
 			);
@@ -216,6 +227,7 @@
 				9B45A9A4221B7B4000305441 /* JobStatus.swift in Sources */,
 				9B45A9A0221B7B0B00305441 /* Script.swift in Sources */,
 				9BDEE78222163235006BA354 /* AppDelegate.swift in Sources */,
+				9B4912D2221CCAD2006E6C73 /* LabelProtocol.swift in Sources */,
 				9B45A9A6221B7B6000305441 /* ItemConfig.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

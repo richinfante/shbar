@@ -19,37 +19,65 @@ In a file named `~/.config/shbar/shbar.json`, add a file using the following str
 [
   {
     "titleRefreshInterval" : 120,
-    "title" : "IP Address",
     "mode" : "RefreshingItem",
-    "titleScript" : {
-      "bin" : "/bin/sh",
+    "title" : "IP Address",
+    "actionScript" : {
+      "bin" : "\/bin\/sh",
       "args" : [
         "-c",
-        "echo IP: $(curl https://api.ipify.org)"
+        "open https:\/\/api.ipify.org"
       ],
       "env" : {
-        "PATH" : "/usr/bin:/usr/local/bin:/sbin:/bin"
-      }
-    }
-  }, {
-    "autostartJob" : true,
-    "jobScript" : {
-      "bin" : "/bin/bash",
-      "args" : [
-        "-c",
-        "ssh user@example.com -nNT -L 8080:localhost:8080"
-      ],
-      "env" : {
-        "PATH" : "/usr/bin:/usr/local/bin:/sbin:/bin"
+        "PATH" : "\/usr\/bin:\/usr\/local\/bin:\/sbin:\/bin"
       }
     },
-    "title" : "SSH Tunnel",
-    "mode" : "JobStatus",
-    "reloadJob" : false
-  }, {
-    "mode" : "ApplicationQuit",
-    "title" : "Quit",
-    "shortcutKey" : "q"
+    "titleScript" : {
+      "bin" : "\/bin\/sh",
+      "args" : [
+        "-c",
+        "echo $(curl https:\/\/api.ipify.org) | tr '\n' ' '"
+      ],
+      "env" : {
+        "PATH" : "\/usr\/bin:\/usr\/local\/bin:\/sbin:\/bin"
+      }
+    }
+  },
+  {
+    "reloadJob" : false,
+    "autostartJob" : false,
+    "title" : "~:$",
+    "actionShowsConsole" : false,
+    "mode" : "RefreshingItem",
+    "children" : [
+      {
+        "autostartJob" : false,
+        "mode" : "RefreshingItem",
+        "title" : "Setup Help",
+        "actionScript" : {
+          "bin" : "\/bin\/sh",
+          "args" : [
+            "-c",
+            "open https:\/\/github.com\/richinfante\/shbar"
+          ],
+          "env" : {
+            "PATH" : "\/usr\/bin:\/usr\/local\/bin:\/sbin:\/bin"
+          }
+        },
+        "children" : [
+
+        ],
+        "actionShowsConsole" : false,
+        "reloadJob" : false
+      },
+      {
+        "shortcutKey" : "q",
+        "autostartJob" : false,
+        "mode" : "ApplicationQuit",
+        "title" : "Quit",
+        "actionShowsConsole" : false,
+        "reloadJob" : false
+      }
+    ]
   }
 ]
 

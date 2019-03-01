@@ -19,7 +19,7 @@ class ItemConfig : Codable {
     var jobScript: Script?
     var reloadJob: Bool?
     var autostartJob: Bool?
-    var menuItem: NSMenuItem?
+    var menuItem: LabelProtocol?
     var refreshTimer: Timer?
     var jobStatusItem: NSMenuItem?
     var jobExitStatus: Int32?
@@ -58,7 +58,8 @@ class ItemConfig : Codable {
         jobScript: Script? = nil,
         reloadJob: Bool? = false,
         autostartJob: Bool? = false,
-        shortcutKey: String? = nil
+        shortcutKey: String? = nil,
+        children: [ItemConfig]? = []
         ) {
         self.mode = mode
         self.title = title
@@ -69,6 +70,7 @@ class ItemConfig : Codable {
         self.jobScript = jobScript
         self.reloadJob = reloadJob
         self.autostartJob = autostartJob
+        self.children = children
     }
     
     @objc func suspendJob() {
@@ -207,15 +209,20 @@ class ItemConfig : Codable {
             
             // Assign title
             mutableAttributedString.append(NSAttributedString(string: " " + title))
-            menuItem?.attributedTitle = mutableAttributedString
+            menuItem?.attributedTitleString = mutableAttributedString
         } else {
-            menuItem?.title = title
+            if menuItem?.allowsNewlines == true {
+                menuItem?.title = title
+            } else {
+                menuItem?.title = title.replacingOccurrences(of: "\n", with: " ")
+            }
         }
     }
     
-    func createMenuItem(_ appDelegate: AppDelegate) -> NSMenuItem {
-        let menuItem = NSMenuItem()
-        
+    
+    /// Generate the submenu for this item
+    // If it has none, nil is returned.
+    func createSubMenu(_ appDelegate: AppDelegate) -> NSMenu? {
         if let children = self.children, children.count > 0 {
             let subMenu = NSMenu()
             subMenu.autoenablesItems = true
@@ -223,13 +230,14 @@ class ItemConfig : Codable {
             for item in children {
                 subMenu.addItem(item.createMenuItem(appDelegate))
             }
-            menuItem.submenu = subMenu
+            
+            return subMenu
         }
-
+        
         if self.mode == .JobStatus {
             let subMenu = NSMenu()
             subMenu.autoenablesItems = false
-
+            
             let statusItem = NSMenuItem(title: "stopped", action: nil, keyEquivalent: "")
             statusItem.isEnabled = false
             self.jobStatusItem = statusItem
@@ -258,7 +266,7 @@ class ItemConfig : Codable {
             resumeItem.action = #selector(ItemConfig.resumeJob)
             resumeItem.isEnabled = false
             resumeItem.target = self
-
+            
             let consoleItem = NSMenuItem(title: "View Console", action: nil, keyEquivalent: "")
             consoleItem.action = #selector(ItemConfig.showJobConsole)
             consoleItem.isEnabled = true
@@ -281,13 +289,20 @@ class ItemConfig : Codable {
             self.resumeMenuItem = resumeItem
             self.consoleMenuItem = consoleItem
             
+            return subMenu
+        }
+        
+        return nil
+    }
+    
+    /// Create a menu item for this.
+    func createMenuItem(_ appDelegate: AppDelegate) -> NSMenuItem {
+        let menuItem = NSMenuItem()
+        
+        let subMenu = self.createSubMenu(appDelegate)
+        
+        if let subMenu = subMenu {
             menuItem.submenu = subMenu
-            
-            
-            // Start the job if needed
-            if let autoStart = self.autostartJob, autoStart {
-                self.startJob()
-            }
         } else if self.mode == .ApplicationQuit {
             menuItem.target = appDelegate
             menuItem.action = #selector(AppDelegate.terminateMenuBarApp(_:))
@@ -299,6 +314,11 @@ class ItemConfig : Codable {
             }
         }
         
+        // Start the job if needed
+        if let autoStart = self.autostartJob, autoStart {
+            self.startJob()
+        }
+
         // Shortcut key
         if let shortcutKey = self.shortcutKey {
             menuItem.keyEquivalent = shortcutKey
@@ -351,6 +371,7 @@ class ItemConfig : Codable {
                     titleScript.execute { [weak self] _, result in
                         // Update in background.
                         self?.menuItem?.title = result
+                        print(result)
                         // Invalidate if self is no longer available (gc)
                         if self == nil {
                             timer.invalidate()

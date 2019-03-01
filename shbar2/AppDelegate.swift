@@ -17,29 +17,39 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             title: "IP Address",
             titleScript: Script(
                 bin: "/bin/sh",
-                args: ["-c", "echo IP: $(curl https://api.ipify.org)"],
+                args: ["-c", "echo $(curl https://api.ipify.org) | tr '\n' ' '"],
                 env: [
                     "PATH": "/usr/bin:/usr/local/bin:/sbin:/bin"
                 ]),
-            titleRefreshInterval: 120
-        ),
-        ItemConfig(
-            title: "Setup Help",
+            titleRefreshInterval: 120,
             actionScript: Script(
                 bin: "/bin/sh",
-                args: ["-c", "open https://github.com/richinfante/shbar"],
+                args: ["-c", "open https://api.ipify.org"],
                 env: [
                     "PATH": "/usr/bin:/usr/local/bin:/sbin:/bin"
                 ])
         ),
         ItemConfig(
-            mode: .ApplicationQuit,
-            title: "Quit",
-            shortcutKey: "q"
-        )
+            title: "~:$",
+            children: [
+                ItemConfig(
+                    title: "Setup Help",
+                    actionScript: Script(
+                        bin: "/bin/sh",
+                        args: ["-c", "open https://github.com/richinfante/shbar"],
+                        env: [
+                            "PATH": "/usr/bin:/usr/local/bin:/sbin:/bin"
+                        ])
+                ),
+                ItemConfig(
+                    mode: .ApplicationQuit,
+                    title: "Quit",
+                    shortcutKey: "q"
+                )
+            ])
     ]
 
-    let statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
+    var statusItems : [NSStatusItem] = []
 
     static var userHomeDirectoryPath : String {
         let pw = getpwuid(getuid())
@@ -81,35 +91,59 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         let data = try? jsonEncoder.encode(menuItems)
         print(String(data: data!, encoding: .utf8)!)
-        // Insert code here to initialize your application
-        let menu = NSMenu(title: "shbar")
-        menu.items = []
-        
-        for item in menuItems {
-            // Add to actual menu
-            menu.items.append(item.createMenuItem(self))
-        }
 
-        // Set main title
-        statusItem.button!.title = "shbar"
-        statusItem.menu = menu
+        for item in menuItems {
+            let statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
+            // Set main title
+            statusItem.menu = item.createSubMenu(self)
+            item.menuItem = statusItem.button!
+            item.initializeTitle()
+            
+            if item.actionScript != nil {
+                statusItem.button!.action = #selector(ItemConfig.dispatchAction)
+                statusItem.button!.target = item
+            }
+            
+//            if item.menuItem?.title == "SHBAR" {
+//                item.menuItem?.title = ""
+//                let image = NSImage(named: "Image-1")
+////                image!.size = NSSize(width: NSStatusItem.squareLength, height: NSStatusItem.squareLength)
+//                statusItem.length = NSStatusItem.squareLength
+//                statusItem.button!.image = image
+//            }
+            
+            statusItems.append(statusItem)
+        }
+        
         print("launched.")
     }
 
-    func applicationWillTerminate(_ aNotification: Notification) {
-        
-        // Insert code here to tear down your application
+    func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
+        self.terminateRemainingJobs()
+        return NSApplication.TerminateReply.terminateNow
     }
     
-    @objc func terminateMenuBarApp(_ sender: NSMenuItem?) {
+    func applicationWillTerminate(_ aNotification: Notification) {
+        self.terminateRemainingJobs()
+    }
+    
+    func terminateRemainingJobs() {
+        print("terminating remaining jobs...")
+        
         // Terminate jobs
         for item in menuItems {
             item.currentJob?.terminate()
         }
+    }
 
+    @objc func terminateMenuBarApp(_ sender: NSMenuItem?) {
+        self.terminateRemainingJobs()
         NSApplication.shared.terminate(self)
     }
 
+    func handler(sig: Int32) -> Void {
+        self.terminateMenuBarApp(nil)
+    }
 
 }
 
