@@ -82,3 +82,7 @@ In a file named `~/.config/shbar/shbar.json`, add a file using the following str
 ]
 
 ```
+
+
+## Logging
+Shbar places logfiles for each process here: `~/Library/Logs/shbar/`. It does not automatically remove the logfiles, but will in a future release.
