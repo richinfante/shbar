@@ -9,7 +9,13 @@
 import Foundation
 
 enum ItemConfigMode : String, Codable {
+    /// Refreshes contents with output of script.
     case RefreshingItem
+
+    /// Displays job name / status icon.
+    /// Contains submenu of launch actions.
     case JobStatus
+
+    /// Quit the app.
     case ApplicationQuit
 }

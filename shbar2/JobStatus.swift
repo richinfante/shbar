@@ -9,7 +9,12 @@
 import Foundation
 
 enum JobStatus : String {
+    /// The job is suspended.
     case Stopped
+    
+    /// The job is exited.
     case Exited
+    
+    /// The job is running
     case Running
 }

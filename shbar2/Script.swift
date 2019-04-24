@@ -36,6 +36,7 @@ class Script : Codable {
         self.env = env
     }
     
+    /// Launch a job.
     func launchJob(launched: ((Process)->())? = nil, completed: ((Int32)->())? = nil) {
         DispatchQueue.global(qos: .background).async { [weak self] in
             guard let `self` = self else { return }

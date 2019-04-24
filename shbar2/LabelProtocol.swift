@@ -16,6 +16,7 @@ protocol LabelProtocol {
     var allowsNewlines : Bool { get }
 }
 
+/// Add conformanse for NSMenuItem
 extension NSMenuItem : LabelProtocol {
     var allowsNewlines : Bool { return false }
     var attributedTitleString: NSAttributedString? {
@@ -28,6 +29,7 @@ extension NSMenuItem : LabelProtocol {
     }
 }
 
+/// Add conformanse for NSStatusBarButton
 extension NSStatusBarButton : LabelProtocol {
     var allowsNewlines : Bool { return false }
     var attributedTitleString: NSAttributedString? {

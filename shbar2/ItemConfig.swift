@@ -8,33 +8,82 @@
 
 import Cocoa
 import Foundation
+import UserNotifications
 
 class ItemConfig : Codable {
+    /// The mode for the menu item.
     var mode: ItemConfigMode? = .RefreshingItem
-    var title: String?
-    var titleScript: Script?
-    var titleRefreshInterval: TimeInterval?
-    var actionScript: Script?
-    var shortcutKey: String?
-    var jobScript: Script?
-    var reloadJob: Bool?
-    var autostartJob: Bool?
-    var menuItem: LabelProtocol?
-    var refreshTimer: Timer?
-    var jobStatusItem: NSMenuItem?
-    var jobExitStatus: Int32?
-    var currentJob: Process?
-    var isPaused : Bool = false
-    var actionShowsConsole: Bool? = false
-    var children: [ItemConfig]? = []
     
+    /// Display title
+    var title: String?
+    
+    /// Title script to run.
+    var titleScript: Script?
+    
+    /// Refresh interval for the title.
+    var titleRefreshInterval: TimeInterval?
+    
+    /// Script to un on click.
+    var actionScript: Script?
+    
+    /// Shortcut key for the menu item
+    var shortcutKey: String?
+    
+    /// For Job-Type Items, the job script.
+    var jobScript: Script?
+    
+    /// Should we auto-reload the job when it fails?
+    var reloadJob: Bool?
+    
+    /// Should we auto-start the job on startup.
+    var autostartJob: Bool?
+    
+    /// Attachment to the menu label for updating text.
+    /// This is a commmon protocol adapter for different types of system labels.
+    var menuItem: LabelProtocol?
+    
+    /// Timer scheduling refresh events.
+    var refreshTimer: Timer?
+    
+    /// Job status menu item - for jobs with status, this is a label to show "running"/"suspended"/etc.. states.
+    var jobStatusItem: NSMenuItem?
+    
+    /// The exit status from the job.
+    var jobExitStatus: Int32?
+
+    /// The currently runnin job process
+    var currentJob: Process?
+
+    /// Is the job paused?
+    var isPaused : Bool = false
+
+    /// Is the action a console show?
+    var actionShowsConsole: Bool? = false
+
+    /// Children of this item.
+    var children: [ItemConfig]? = []
+
+    /// Menu item for the start job button
     var startMenuItem: NSMenuItem?
+
+    /// Menu item for the stop job button
     var stopMenuItem: NSMenuItem?
+
+    /// Menu item for the restart job button
     var restartMenuItem: NSMenuItem?
+
+    /// Menu item for the suspend job button
     var suspendMenuItem: NSMenuItem?
+
+    /// Menu item for the resume job button
     var resumeMenuItem: NSMenuItem?
+    
+    /// Menu item for the showing console of job.
     var consoleMenuItem: NSMenuItem?
     
+    var delegate: AppDelegate?
+    
+    /// Keys to encode / decode for direct-to-config (de)serialization
     private enum CodingKeys: String, CodingKey {
         case mode
         case children
@@ -49,6 +98,8 @@ class ItemConfig : Codable {
         case actionShowsConsole
     }
     
+    /// Initializer for building in-code.
+    /// Primarily for demo ui.
     init(
         mode: ItemConfigMode? = .RefreshingItem,
         title: String? = nil,
@@ -73,6 +124,8 @@ class ItemConfig : Codable {
         self.children = children
     }
     
+    /// Function for suspending the current job, if it's running.
+    /// This updates the status labels.
     @objc func suspendJob() {
         if let process = self.currentJob {
             process.suspend()
@@ -83,7 +136,9 @@ class ItemConfig : Codable {
             }
         }
     }
-    
+
+    /// Function for resuming the current job, if it's stopped.
+    /// This updates the status labels.
     @objc func resumeJob() {
         if let process = self.currentJob {
             process.resume()
@@ -95,7 +150,11 @@ class ItemConfig : Codable {
         }
     }
     
+    /// Function for starting the current job, if it's not running.
+    /// Running jobs are first killed.
+    /// This updates the status labels.
     @objc func startJob() {
+        self.currentJob?.interrupt()
         self.currentJob?.terminate()
         
         if let script = self.jobScript {
@@ -109,11 +168,45 @@ class ItemConfig : Codable {
                 }
             }, completed: {
                 status in
+                
+                // Register for notifications if we have a delegate.
+                if let delegate = self.delegate {
+                    let id = delegate.registerProcessNotificationID(job: self)
+                    
+                    // Create content
+                    let content = UNMutableNotificationContent()
+                    content.title = "\(self.title ?? "Process")"
+                    content.categoryIdentifier = "jobAlert"
+                    
+                    // Show info for auto-restarts.
+                    if self.reloadJob == true {
+                        content.body = "Auto-Restarted; Exited with code: \(status)"
+                    } else {
+                        content.body = "Exited with code: \(status)"
+                    }
+                    
+                    content.sound = UNNotificationSound.default
+                    content.userInfo = [ "job": id ]
 
+                    // Trigger after 0.1s.
+                    let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 0.1, repeats: false)
+                    
+                    // Schedule request.
+                    let request = UNNotificationRequest(identifier: "localNotification", content: content, trigger: trigger)
+                    
+                    // Set delegate and add.
+                    UNUserNotificationCenter.current().delegate = self.delegate
+                    UNUserNotificationCenter.current().add(request) { (error) in
+                        print(error)
+                    }
+                }
+                
+                // update title
                 if let title = self.title {
                     self.updateTitle(title: title)
                 }
                 
+                // Reload if needed.
                 if let reloadJob = self.reloadJob, reloadJob {
                     self.startJob()
                 }
@@ -121,6 +214,7 @@ class ItemConfig : Codable {
         }
     }
     
+    /// Stop a job.
     @objc func stopJob() {
         self.reloadJob = false
         if let job = self.currentJob {
@@ -137,6 +231,7 @@ class ItemConfig : Codable {
         }
     }
     
+    /// Show console.
     @objc func showJobConsole() {
         if let jobScript = self.jobScript, let uuid = jobScript.uuid {
             DispatchQueue.global(qos: .background).async {
@@ -150,6 +245,7 @@ class ItemConfig : Codable {
         }
     }
     
+    /// Update title / job status.
     func updateTitle(title: String) {
         if self.mode == .JobStatus {
             var color = NSColor.gray
@@ -223,6 +319,7 @@ class ItemConfig : Codable {
     /// Generate the submenu for this item
     // If it has none, nil is returned.
     func createSubMenu(_ appDelegate: AppDelegate) -> NSMenu? {
+        self.delegate = appDelegate
         if let children = self.children, children.count > 0 {
             let subMenu = NSMenu()
             subMenu.autoenablesItems = true
@@ -298,6 +395,7 @@ class ItemConfig : Codable {
     /// Create a menu item for this.
     func createMenuItem(_ appDelegate: AppDelegate) -> NSMenuItem {
         let menuItem = NSMenuItem()
+        self.delegate = appDelegate
         
         let subMenu = self.createSubMenu(appDelegate)
         

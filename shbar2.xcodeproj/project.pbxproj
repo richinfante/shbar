@@ -95,11 +95,11 @@
 				9B45A9A3221B7B4000305441 /* JobStatus.swift */,
 				9B45A9A1221B7B2600305441 /* ItemConfigMode.swift */,
 				9B45A99F221B7B0B00305441 /* Script.swift */,
+				9B4912D1221CCAD2006E6C73 /* LabelProtocol.swift */,
 				9BDEE78522163235006BA354 /* Assets.xcassets */,
 				9BDEE78722163235006BA354 /* Main.storyboard */,
 				9BDEE78A22163235006BA354 /* Info.plist */,
 				9BDEE78B22163235006BA354 /* shbar2.entitlements */,
-				9B4912D1221CCAD2006E6C73 /* LabelProtocol.swift */,
 			);
 			path = shbar2;
 			sourceTree = "<group>";
